@@ -84,6 +84,7 @@
         var result = await Http.PostAsJsonAsync($"api/policy/make_request", Policy);
         if (result.IsSuccessStatusCode)
         {
+            await JsRuntime.InvokeVoidAsync("alert", "Request sent!"); // Alert
             navigationManager.NavigateTo("/");
         }
         else

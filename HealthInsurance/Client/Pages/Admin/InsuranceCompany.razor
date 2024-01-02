@@ -81,6 +81,7 @@ else
 
     async Task Delete(int id)
     {
+        bool confirmed = await JsRuntime.InvokeAsync<bool>("confirm", "Confirm delete?"); // Confirm
         var result = await Http.DeleteAsync($"api/company/{id}");
 
         //If not successed request
@@ -89,6 +90,7 @@ else
             error = true;
             context = result.StatusCode.ToString();
         }
+
         await LoadData();
     }
 

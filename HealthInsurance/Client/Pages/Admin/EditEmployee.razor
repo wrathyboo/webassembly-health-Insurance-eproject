@@ -20,7 +20,7 @@ else
 }
 @if (error)
 {
-    <p class="text-bg-danger">Something wrong!</p>
+    <p class="text-bg-danger">Something wrong! @errorMsg</p>
 }
 <EditForm Model="User" OnValidSubmit="HandleSubmit">
     <DataAnnotationsValidator />
@@ -99,7 +99,7 @@ else
     bool error = false;
     public EmployeeModel User { get; set; } = new EmployeeModel();
     bool emptyPolicy = true;
-
+    string errorMsg = "";
 
 
     protected override async Task OnParametersSetAsync()
@@ -128,6 +128,7 @@ else
             var result = await Http.PutAsJsonAsync($"api/employee/{Id}", User);
             if (result.IsSuccessStatusCode)
             {
+                await JsRuntime.InvokeVoidAsync("alert", "Employee detaills updated!"); // Alert
                 navigationManager.NavigateTo("/employees");
             }
             else
@@ -141,11 +142,13 @@ else
             var result = await Http.PostAsJsonAsync($"api/employee", User);
             if (result.IsSuccessStatusCode)
             {
+                await JsRuntime.InvokeVoidAsync("alert", "Successfully created new employee account!"); // Alert
                 navigationManager.NavigateTo("employees");
             }
             else
             {
                 error = true;
+                errorMsg = "Username or email already exist!";
             }
         }
     }

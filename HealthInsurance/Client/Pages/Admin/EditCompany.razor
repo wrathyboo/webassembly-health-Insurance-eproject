@@ -78,6 +78,7 @@ else
             var result = await Http.PutAsJsonAsync($"api/company/{Id}", Company);
             if (result.IsSuccessStatusCode)
             {
+                await JsRuntime.InvokeVoidAsync("alert", "Company updated!"); // Alert
                 navigationManager.NavigateTo("/company");
             }
             else
@@ -91,6 +92,7 @@ else
             var result = await Http.PostAsJsonAsync($"api/company", Company);
             if (result.IsSuccessStatusCode)
             {
+                await JsRuntime.InvokeVoidAsync("alert", "New company added!"); // Alert
                 navigationManager.NavigateTo("/company");
             }
             else

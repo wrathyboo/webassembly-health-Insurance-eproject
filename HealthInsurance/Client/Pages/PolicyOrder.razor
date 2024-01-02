@@ -3,12 +3,16 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @inject HttpClient Http
 @inject NavigationManager navigationManager
+@inject IJSRuntime JsRuntime
 @using HealthInsurance.Shared
+@using HealthInsurance.Client.Components
 @attribute [Authorize(Roles ="Member, Administrator")]
 
         <h3>
             Policy Order
         </h3>
+<Popup @ref="popupRef" />
+
 @if(User!.PolicyOnEmployee == null)
 {
     <p>Selected ID: @policyId</p>
@@ -43,31 +47,51 @@ else
     [Parameter]
     public string Username { get; set; }
 
+    private Popup popupRef;
 
     protected override async Task OnParametersSetAsync()
     {
         User = await Http.GetFromJsonAsync<ApplicationUser>($"api/user/{Username}");
         policies = await Http.GetFromJsonAsync<List<Policy>>("api/policy");
-
+        //due to a bug which causes InputSelect attribute to not bind initial value,
+        //We decided to use foreach loop one time to get the first instance of Company, assign the company id then break the loop
+        if (policyId == null || policyId == 0)
+        {
+            foreach (var x in policies)
+            {
+                policyId = x.Id;
+                break;
+            }
+        }
     }
 
     async Task HandleSubmit()
     {
+        //bool confirmed = await JsRuntime.InvokeAsync<bool>("confirm", "Are you sure?"); // Confirm
         HealthInsurance.Shared.PolicyOrder order = new()
             {
                 Id = policyId,
                 EmployeeId = User.Id,
                 EmployeeUsername = User.UserName
             };
+        
         var result = await Http.PostAsJsonAsync("api/user/order",order);
         if (result.IsSuccessStatusCode)
         {
             var assignPolicy = await Http.GetAsync($"api/policy-employee/{order.EmployeeId}/{order.Id}");
             if (assignPolicy.IsSuccessStatusCode)
             {
+                await JsRuntime.InvokeVoidAsync("alert", "Susscessfully assigned policy!"); // Alert
+
+
                 navigationManager.NavigateTo($"employee/{order.EmployeeUsername}");
             }
         }
+    }
+    private void RedirectPage()
+    {
+        // Shows the popup at the center of the screen
+        popupRef.Show("Popup body text");
     }
 
 }

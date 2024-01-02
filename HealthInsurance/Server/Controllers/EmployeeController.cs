@@ -1,4 +1,5 @@
 ﻿using HealthInsurance.Server.Data;
+using HealthInsurance.Server.Helpers;
 using HealthInsurance.Shared;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -6,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.Net;
 
 namespace HealthInsurance.Server.Controllers
 {
@@ -136,9 +138,16 @@ namespace HealthInsurance.Server.Controllers
 
         // POST: api/Employee
         [HttpPost]
-        public async Task<ActionResult<string>> CreateEmployee(EmployeeModel model)
+        public async Task<IActionResult> CreateEmployee(EmployeeModel model)
         {
-			var newEmp = new ApplicationUser{
+			//Check if username and email already exist
+			var userCheck = await _userManager.FindByNameAsync(model!.UserName!) ?? await _userManager.FindByEmailAsync(model!.Email!); ;
+			if (userCheck != null) 
+			{
+				return new CustomError(HttpStatusCode.BadRequest, "Username or email already exist");
+            }
+
+            var newEmp = new ApplicationUser{
 				UserName = model.UserName,
 				Email = model.Email,
 				FirstName = model.FirstName,
@@ -159,7 +168,7 @@ namespace HealthInsurance.Server.Controllers
             {
                 return Ok("New user successfully created!");
             }
-            else return("Something wrong");
+            else return StatusCode(400, "Something wrong");
         }
 
 

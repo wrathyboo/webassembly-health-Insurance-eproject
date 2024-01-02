@@ -58,7 +58,7 @@ else
 @code {
     private List<Policy>? Policies;
     private List<PolicyDto> policyDtos = new List<PolicyDto>();
-
+    bool error = false;
     protected override async Task OnInitializedAsync()
     {
         await LoadData();
@@ -88,8 +88,19 @@ else
 
     async Task Delete(int id)
     {
+        bool confirmed = await JsRuntime.InvokeAsync<bool>("confirm", "Confirm delete?"); // Confirm
         var result = await Http.DeleteAsync($"api/policy/{id}");
-        await LoadData();
+
+        if (result.IsSuccessStatusCode)
+        {
+            await JsRuntime.InvokeVoidAsync("alert", $"Successfully deleted policy {id}!"); // Alert
+            await LoadData();
+        }
+        else
+        {
+            error = true;
+        }
+
     }
 
     async Task LoadData()

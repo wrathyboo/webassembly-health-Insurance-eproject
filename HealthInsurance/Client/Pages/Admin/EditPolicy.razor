@@ -105,6 +105,7 @@ else
             var result = await Http.PutAsJsonAsync($"api/policy/{Id}", Policy);
             if (result.IsSuccessStatusCode)
             {
+                await JsRuntime.InvokeVoidAsync("alert", "Policy updated!"); // Alert
                 navigationManager.NavigateTo("/policies");
             }
             else
