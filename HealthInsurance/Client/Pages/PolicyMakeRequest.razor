@@ -1,0 +1,94 @@
+﻿@page "/policy-request"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Member, Administrator")]
+@using HealthInsurance.Shared
+@using Microsoft.AspNetCore.Components.Authorization
+@inject HttpClient Http
+@inject NavigationManager navigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+<div class="container" style="padding-bottom:500px">
+    <div class="text-center" style="padding-top:50px">
+        <h3>
+           Policy Request
+        </h3>
+        @if (error)
+        {
+            <p class="text-bg-danger">Something wrong!</p>
+        }
+                <div class="d-flex justify-content-center">
+            <EditForm Model="Policy" OnValidSubmit="HandleSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <div>
+                    <label for="name">Policy name</label>
+                    <InputText id="name" @bind-Value="Policy.Name" class="form-control"></InputText>
+                    <ValidationMessage For="@(() => Policy.Name)" />
+                </div>
+                <div>
+                    <label for="emi">EMI</label>
+                    <InputNumber id="emi" @bind-Value="Policy.Emi" class="form-control"></InputNumber>
+                    <ValidationMessage For="@(() => Policy.Emi)" />
+                </div>
+                <div>
+                    <label for="amount">Amount</label>
+                    <InputNumber id="amount" @bind-Value="Policy.Amount" class="form-control"></InputNumber>
+                    <ValidationMessage For="@(() => Policy.Amount)" />
+                </div>
+
+                <div>
+                    <label for="company">Company</label>
+                    <InputSelect @bind-Value="Policy.CompanyId" Id="company" Class="form-control">
+                        
+                        @foreach (var x in companies)
+                        {
+                              <option @key=x.Id value=@x.Id>@x.Name</option>
+                        }
+                    </InputSelect>
+                </div>
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </EditForm>
+
+            </div>
+    </div>
+
+</div>
+@code {
+    private PolicyModel Policy = new PolicyModel { Status = "Pending" };
+    private List<Company> companies = new List<Company>();
+    private string SelectedCompany = "";
+
+    bool error = false;
+    protected override async Task OnInitializedAsync()
+    {
+        companies = await Http.GetFromJsonAsync<List<Company>>("api/company");
+    }
+    async Task HandleSubmit()
+    {
+        var authestate = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var currentUser = authestate.User!.Identity!.Name!;
+        Policy.EmployeeId = currentUser;
+
+        //due to a bug which causes InputSelect attribute to not bind initial value,
+        //We decided to use foreach loop one time to get the first instance of Company, assign the company id then break the loop
+        if (Policy.CompanyId is null)
+        {
+            foreach (var x in companies)
+            {
+                Policy.CompanyId = x.Id;
+                break;
+            }
+        }
+
+        var result = await Http.PostAsJsonAsync($"api/policy/make_request", Policy);
+        if (result.IsSuccessStatusCode)
+        {
+            navigationManager.NavigateTo("/");
+        }
+        else
+        {
+            error = true;
+        }
+    }
+}

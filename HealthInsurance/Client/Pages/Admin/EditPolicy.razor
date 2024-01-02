@@ -1,0 +1,130 @@
+﻿@page "/edit-policy"
+@page "/edit-policy/{id:int}"
+@using HealthInsurance.Shared
+@using Blazored.LocalStorage
+@using System.Net.Http.Headers
+@using Helpers
+@layout AdminLayout
+@inject HttpClient Http
+@inject ILocalStorageService localStorage
+@inject NavigationManager navigationManager
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Administrator")]
+@if (Id == null)
+{
+    <h3>Create Policy</h3>
+}
+else
+{
+    <h3>Edit Policy @Policy.Name</h3>
+}
+@if (error)
+{
+    <p class="text-bg-danger">Something wrong!</p>
+}
+<EditForm Model="Policy" OnSubmit="HandleSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div>
+        <label for="name">Name</label>
+        <InputText id="name" @bind-Value="Policy.Name" class="form-control"></InputText>
+        <ValidationMessage For="@(() => Policy.Name)" />
+    </div>
+    <div>
+        <label for="Description">Description</label>
+        <InputTextArea id="Description" @bind-Value="Policy.Description" class="form-control"></InputTextArea>
+        <ValidationMessage For="@(() => Policy.Description)" />
+    </div>
+    <div>
+        <label for="Amount">Amount</label>
+        <InputNumber id="Amount" @bind-Value="Policy.Amount" class="form-control"></InputNumber>
+        <ValidationMessage For="@(() => Policy.Amount)" />
+    </div>
+    <div>
+        <label for="Emi">Emi</label>
+        <InputNumber id="Emi" @bind-Value="Policy.Emi" class="form-control"></InputNumber>
+        <ValidationMessage For="@(() => Policy.Emi)" />
+    </div>
+    <div>
+        <label for="medical">Medical Id</label>
+        <InputText id="medical" @bind-Value="Policy.MedicalId" class="form-control"></InputText>
+        <ValidationMessage For="@(() => Policy.MedicalId)" />
+    </div>
+    <div>
+        <label for="company">Company</label>
+        <InputSelect @bind-Value="Policy.CompanyId" Id="company" Class="form-control">
+
+            @foreach (var x in companies)
+            {
+                <option @key=x.Id value=@x.Id>@x.Name</option>
+            }
+        </InputSelect>
+    </div>
+    <div class="text-center">
+        <button type="submit" class="btn btn-primary">Save</button>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+    bool error = false;
+    public Policy Policy { get; set; } = new Policy();
+    public List<Company> companies { get; set; } = new List<Company>();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id != null)
+        {
+            var result = await Http.GetFromJsonAsync<Policy>($"api/policy/{Id}");
+            companies = await Http.GetFromJsonAsync<List<Company>>("api/company");
+            Policy.Name = result.Name;
+            Policy.Amount = result.Amount;
+            Policy.Emi = result.Emi;
+            Policy.Description = result.Description;
+            Policy.CompanyId = result.CompanyId;
+            Policy.MedicalId = result.MedicalId;
+            Policy.Id = result.Id;
+        }
+    }
+
+    async Task HandleSubmit()
+    {
+        if (Id != null)
+        {
+            //due to a bug which causes InputSelect attribute to not bind initial value,
+            //We decided to use foreach loop one time to get the first instance of Company, assign the company id then break the loop
+            if (Policy.CompanyId is null)
+            {
+                foreach (var x in companies)
+                {
+                    Policy.CompanyId = x.Id;
+                    break;
+                }
+            }
+            var result = await Http.PutAsJsonAsync($"api/policy/{Id}", Policy);
+            if (result.IsSuccessStatusCode)
+            {
+                navigationManager.NavigateTo("/policies");
+            }
+            else
+            {
+                error = true;
+            }
+            // User = await result.Content.ReadFromJsonAsync<EmployeeModel>();
+        }
+        else
+        {
+            var result = await Http.PostAsJsonAsync($"api/policy", Policy);
+            if (result.IsSuccessStatusCode)
+            {
+                navigationManager.NavigateTo("/policies");
+            }
+            else
+            {
+                error = true;
+            }
+        }
+    }
+}
+

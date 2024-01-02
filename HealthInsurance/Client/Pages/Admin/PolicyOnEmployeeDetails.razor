@@ -1,0 +1,113 @@
+﻿@page "/policy-employee-details/{id}"
+@using HealthInsurance.Shared
+@using Blazored.LocalStorage
+@using System.Net.Http.Headers
+@using HealthInsurance.Shared.Dto
+@using Helpers
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Administrator")]
+@layout AdminLayout
+@inject HttpClient Http
+@inject ILocalStorageService localStorage
+@inject NavigationManager navigationManager
+<h3>Employee's policy details</h3>
+
+<div>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">
+            User: 
+        </dt>
+        <dd class="col-sm-10">
+            @userPolicy?.FirstName @userPolicy?.LastName
+        </dd>
+    </dl>
+    <dl class="row">
+        <dt class="col-sm-2">
+            Policy name:
+        </dt>
+        <dd class="col-sm-10">
+            @userPolicy?.Name
+        </dd>
+    </dl>
+    <dl class="row">
+        <dt class="col-sm-2">
+            Policy amount:
+        </dt>
+        <dd class="col-sm-10">
+            @userPolicy?.Amount
+        </dd>
+    </dl>
+    <dl class="row">
+        <dt class="col-sm-2">
+            Policy EMI:
+        </dt>
+        <dd class="col-sm-10">
+            @userPolicy?.Emi
+        </dd>
+    </dl>
+    <dl class="row">
+        <dt class="col-sm-2">
+            Policy Start date:
+        </dt>
+        <dd class="col-sm-10">
+            @userPolicy?.PolicyStartDate
+        </dd>
+    </dl>
+    <dl class="row">
+        <dt class="col-sm-2">
+            Policy End date:
+        </dt>
+        <dd class="col-sm-10">
+            @userPolicy?.PolicyEndDate
+        </dd>
+    </dl>
+    <dl class="row">
+        <dt class="col-sm-2">
+            Policy duration:
+        </dt>
+        <dd class="col-sm-10">
+            @userPolicy?.Duration
+        </dd>
+    </dl>
+        <dl class="row">
+            <dt class="col-sm-2">
+                Medical Id:
+            </dt>
+            <dd class="col-sm-10">
+                @userPolicy?.MedicalId
+            </dd>
+        </dl>
+</div>
+<div>
+    <a href="/employees">Back to List</a>
+    <button class="btn btn-danger" @onclick="@(() => PolicyRemove(userPolicy!.PolicyId))">Remove policy</button>
+</div>
+
+@code {
+    [Parameter]
+    public string? Id { get; set; }
+    public int? policyId;
+    public PolicyEmployeeDto? userPolicy;
+    bool error = false;
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id != null)
+        {
+            userPolicy = await Http.GetFromJsonAsync<PolicyEmployeeDto>($"api/policy-employee/{Id}");
+        }
+    }
+
+    async Task PolicyRemove(int? id)
+    {
+        var result = await Http.DeleteAsync($"api/user/policy/{id}");
+        if (result.IsSuccessStatusCode)
+        {
+            navigationManager.NavigateTo($"/employees");
+        }
+        else
+        {
+            error = true;
+        }
+    }
+}

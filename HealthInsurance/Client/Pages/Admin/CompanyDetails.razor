@@ -1,0 +1,76 @@
+﻿@page "/company-details/{id:int}"
+@using HealthInsurance.Shared
+@using Blazored.LocalStorage
+@using System.Net.Http.Headers
+@using HealthInsurance.Shared.Dto
+@using Helpers
+@layout AdminLayout
+@inject HttpClient Http
+@inject ILocalStorageService localStorage
+@inject NavigationManager navigationManager
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Administrator")]
+<h3>Company details</h3>
+
+<div>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">
+            Company Id:
+        </dt>
+        <dd class="col-sm-10">
+            @company?.Id
+        </dd>
+    </dl>
+    <dl class="row">
+        <dt class="col-sm-2">
+            Company name:
+        </dt>
+        <dd class="col-sm-10">
+            @company?.Name
+        </dd>
+    </dl>
+    <dl class="row">
+        <dt class="col-sm-2">
+            Company address:
+        </dt>
+        <dd class="col-sm-10">
+            @company?.Address
+        </dd>
+    </dl>
+    <dl class="row">
+        <dt class="col-sm-2">
+            Contact phone number:
+        </dt>
+        <dd class="col-sm-10">
+            @company?.Phone
+        </dd>
+    </dl>
+    <dl class="row">
+        <dt class="col-sm-2">
+            URL:
+        </dt>
+        <dd class="col-sm-10">
+            @company?.CompanyURL
+        </dd>
+    </dl>
+   
+   
+</div>
+<div>
+    <a href="/policies">Back to Policies</a>
+</div>
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+    public int? policyId;
+    public Company company;
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id != null)
+        {
+            company = await Http.GetFromJsonAsync<Company>($"api/company/{Id}");
+        }
+    }
+}

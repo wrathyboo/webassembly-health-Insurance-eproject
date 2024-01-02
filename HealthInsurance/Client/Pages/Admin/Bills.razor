@@ -1,0 +1,71 @@
+﻿@page "/bills"
+@using HealthInsurance.Shared
+@using Blazored.LocalStorage
+@using System.Net.Http.Headers
+@using HealthInsurance.Shared.Dto
+@using Helpers
+@layout AdminLayout
+@inject HttpClient Http
+@inject ILocalStorageService localStorage
+@inject NavigationManager navigationManager
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Administrator")]
+<h3>Bills</h3>
+
+@if (bills == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+
+
+    @if (error)
+    {
+        <p class="text-bg-danger">Something wrong! @context</p>
+    }
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Amount</th>
+                <th>Policy duration (month)</th>
+                <th>Company name</th>
+                <th>Medical ID</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var x in bills)
+            {
+                <tr>
+                    <td>@x.Id</td>
+                    <td>@x.Name</td>
+                    <td>@x.Description</td>
+                    <td>@x.Amount</td>
+                    <td>@x.PolicyDurationInMonths</td>
+                    <td>@x.CompanyName</td>
+                    <td>@x.MedicalId</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<PolicyTotalDescription>? bills;
+    bool error = false;
+    string context = "";
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+
+    async Task LoadData()
+    {
+        bills = await Http.GetFromJsonAsync<List<PolicyTotalDescription>>("api/policy/bills");
+    }
+
+}

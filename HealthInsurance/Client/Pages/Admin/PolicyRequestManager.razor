@@ -1,0 +1,102 @@
+﻿@page "/request-manager"
+
+@using HealthInsurance.Client.Components;
+@using BootstrapBlazor;
+@using HealthInsurance.Shared
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using Blazored.LocalStorage
+@using System.Net.Http.Headers
+@layout AdminLayout
+@attribute [Authorize(Roles = "Administrator")]
+@inject ILocalStorageService localStorage
+@inject HttpClient Http
+@inject NavigationManager navigationManager
+@using Helpers
+<h3>Managing policy requests</h3>
+
+@if (requests == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    @if (error)
+    {
+        <p class="text-bg-danger">Something wrong!</p>
+    }
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Date requested</th>
+                <th>Name</th>
+                <th>Amount</th>
+                <th>EMI</th>
+                <th>Status</th>
+                <th>Insurance</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var x in requests)
+            {
+                @if (x.Status == "Pending")
+                {
+                    <tr>
+                        <td>@x.Id</td>
+                        <td>@x.CreatedAt</td>
+                        <td>@x.PolicyName</td>
+                        <td>@x.PolicyAmount</td>
+                        <td>@x.Emi</td>
+                        <td class="bg-warning">@x.Status</td>
+                        <td><a href="javascript: void(0)" data-bs-toggle="tooltip" data-bs-placement="top" title="tool tips">Company details</a></td>
+                        @if (x.Status == "Pending")
+                        {
+                            <td><button class="btn btn-primary" @onclick="@(() => ApproveHandle(@x.Id, "approved"))">Approve</button> | <button class="btn btn-danger" @onclick="@(() => ApproveHandle(@x.Id,"deny"))">Deny</button></td>
+                        }
+                    </tr>
+
+                }
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<PolicyRequest>? requests;
+    bool error = false;
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+
+        // //Get an item named authToken which is the user's JWT token received after logged in stored in blazor local storage
+        // var token = await localStorage.GetItemAsync<string>("authToken");
+        // Employees = await Http.GetJsonAsync<List<EmployeeModel>>(
+        //     "api/employee",
+        //     //Pass token to the header before communicate to the API endpoints
+        //     new AuthenticationHeaderValue("Bearer", token),"get");
+    }
+
+
+    async Task ApproveHandle(int id, string action)
+    {
+        PolicyRequest getRequest = await Http.GetFromJsonAsync<PolicyRequest>($"api/policy/request/{id}");
+        getRequest.Status = action;
+        var result = await Http.PutAsJsonAsync($"api/policy/request/action/{id}",getRequest);
+        if (result.IsSuccessStatusCode)
+        {
+            await LoadData();
+        }
+        else
+        {
+            error = true;
+        }
+    }
+
+    async Task LoadData()
+    {
+        requests = await Http.GetFromJsonAsync<List<PolicyRequest>>("api/policy/requests");
+    }
+
+}

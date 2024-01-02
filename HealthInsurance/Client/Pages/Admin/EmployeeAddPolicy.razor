@@ -1,0 +1,87 @@
+﻿@page "/add-policy-employee/{id}"
+@inject NavigationManager navigationManager
+@using HealthInsurance.Shared
+@using Blazored.LocalStorage
+@using System.Net.Http.Headers
+@using Helpers
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Administrator")]
+@layout AdminLayout
+@inject HttpClient Http
+<h3>Attach policy to Employee!</h3>
+
+@if (error)
+{
+    <p class="text-bg-danger">Something wrong!</p>
+}
+@if (policies == null){
+    <p>Loading...</p>
+}
+else {
+    @if (policies == null)
+    {
+        <p>There is currently no policy available! Consider visit the policy requests page.</p>
+    }
+    else
+    {
+        <p>Selected ID: @policyId</p>
+        <div>
+            <label for="policies">Available policies</label>
+            <select @bind="policyId" Id="policies" Class="form-control">
+
+                @foreach (var x in policies)
+                {
+                    <option @key=x.Id value=@x.Id>@x.Name</option>
+                }
+            </select>
+        </div>
+        <div class="text-center">
+            <button type="submit" class="btn btn-primary" @onclick="HandleSubmit">Assign</button>
+        </div>
+    }
+}
+
+@code {
+    [Parameter]
+    public string? Id { get; set; }
+    bool error = false;
+    public PolicyOnEmployee employeePolicy { get; set; } = new PolicyOnEmployee();
+    public List<Policy> policies = new List<Policy>();
+
+    public int policyId { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+       
+        if (Id != null)
+        {
+            policies = await Http.GetFromJsonAsync<List<Policy>>($"api/policy");
+            //due to a bug which causes InputSelect attribute to not bind initial value,
+            //We decided to use foreach loop one time to get the first instance of Company, assign the company id then break the loop
+            if (policyId == 0)
+            {
+                foreach (var x in policies)
+                {
+                    policyId = x.Id;
+                    break;
+                }
+            }
+        }
+    }
+
+    async Task HandleSubmit()
+    {
+
+        Policy getPolicy = await Http.GetFromJsonAsync<Policy>($"api/policy/{policyId}");
+        var result = await Http.GetAsync($"api/policy-employee/{Id}/{policyId}");
+            if (result.IsSuccessStatusCode)
+            {
+                navigationManager.NavigateTo("/employees");
+            }
+            else
+            {
+                error = true;
+            }
+
+    }
+}

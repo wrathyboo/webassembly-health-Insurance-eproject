@@ -1,0 +1,140 @@
+﻿@page "/employee/{username}/policy/{PolicyId:int}"
+@using System.Net.Http.Headers
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Member, Administrator")]
+@using HealthInsurance.Shared
+@using Microsoft.AspNetCore.Components.Authorization
+@inject HttpClient Http
+@inject NavigationManager navigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+<h3>Employee Overview</h3>
+
+
+@if (User == null)
+{
+    <p>Loading user infomation...</p>
+}
+@if (error)
+{
+    <p class="text-bg-danger">Something wrong!</p>
+}
+else
+{
+    <div>
+        <hr />
+        <dl class="row">
+            <dt class="col-sm-2">
+                Policy Id:
+            </dt>
+            <dd class="col-sm-10">
+                @User?.PolicyOnEmployee?.Id
+            </dd>
+        </dl>
+        <dl class="row">
+            <dt class="col-sm-2">
+                Policy name:
+            </dt>
+            <dd class="col-sm-10">
+                @User?.PolicyOnEmployee?.Name
+            </dd>
+        </dl>
+        <dl class="row">
+            <dt class="col-sm-2">
+                Policy name:
+            </dt>
+            <dd class="col-sm-10">
+                @User?.PolicyOnEmployee?.Name
+            </dd>
+        </dl>
+        <dl class="row">
+            <dt class="col-sm-2">
+                Amount:
+            </dt>
+            <dd class="col-sm-10">
+                @User?.PolicyOnEmployee?.Amount
+            </dd>
+        </dl>
+        <dl class="row">
+            <dt class="col-sm-2">
+                EMI:
+            </dt>
+            <dd class="col-sm-10">
+                @User?.PolicyOnEmployee?.Emi
+            </dd>
+        </dl>
+        <dl class="row">
+            <dt class="col-sm-2">
+                Policy start date:
+            </dt>
+            <dd class="col-sm-10">
+                @User?.PolicyOnEmployee?.PolicyStartDate
+            </dd>
+        </dl>
+        <dl class="row">
+            <dt class="col-sm-2">
+                Policy end date:
+            </dt>
+            <dd class="col-sm-10">
+                @User?.PolicyOnEmployee?.PolicyEndDate
+            </dd>
+        </dl>
+        <dl class="row">
+            <dt class="col-sm-2">
+                Policy duration:
+            </dt>
+            <dd class="col-sm-10">
+                @User?.PolicyOnEmployee?.Duration
+            </dd>
+        </dl>
+        <dl class="row">
+            <dt class="col-sm-2">
+                Medical Id:
+            </dt>
+            <dd class="col-sm-10">
+                @User?.PolicyOnEmployee?.MedicalId
+            </dd>
+        </dl>
+        
+        <button class="btn btn-primary" @onclick="@(() => Back(Username!))">Back</button>
+        <button class="btn btn-danger" @onclick="@(() => PolicyRemove(Username!, User!.PolicyOnEmployee!.Id))">Remove policy</button>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string? Username { get; set; }
+
+    [Parameter]
+    public int? PolicyId { get; set; }
+
+    bool error = false;
+
+    public ApplicationUser User { get; set; } = new ApplicationUser();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Username != null)
+        {
+            User = await Http.GetFromJsonAsync<ApplicationUser>($"api/user/{Username}");
+
+        }
+    }
+
+    async Task PolicyRemove(string username, int id)
+    {
+        var result = await Http.DeleteAsync($"api/user/policy/{id}");
+        if (result.IsSuccessStatusCode)
+        {
+            navigationManager.NavigateTo($"/employee/{username}");
+        }
+        else
+        {
+            error = true;
+        }
+    }
+
+    void Back(string username)
+    {
+        navigationManager.NavigateTo($"/employee/{username}");
+    }
+}

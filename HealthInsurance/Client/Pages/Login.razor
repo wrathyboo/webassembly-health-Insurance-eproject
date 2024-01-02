@@ -1,0 +1,98 @@
+﻿@page "/login"
+@using HealthInsurance.Client.Services
+@using HealthInsurance.Shared
+@inject IAuthService AuthService
+@inject NavigationManager NavigationManager
+
+
+
+
+<div class="signup-area" style="margin-bottom:100px">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-lg-6 pl-0">
+                <div class="login-left">
+                    <img src="assets/img/login-bg.jpg" alt="Login">
+                </div>
+            </div>
+            <div class="col-lg-6 ptb-100">
+                <div class="signup-item">
+                    <div class="signup-head">
+                        <h2>Login</h2>
+                        @if (ShowErrors)
+                        {
+                            <div class="alert alert-danger" role="alert">
+                                <p>@Error</p>
+                            </div>
+                        }
+                        <p>
+                            Didn't you account yet?
+                            <a href="/Register">Register Here</a>
+                        </p>
+                    </div>
+                    <div class="signup-form">
+
+                        <EditForm Model="loginModel" OnValidSubmit="HandleLogin">
+                            <DataAnnotationsValidator />
+                            <ValidationSummary />
+                            <div class="row">
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label for="username">Username</label>
+                                        <InputText Id="username" Class="form-control" @bind-Value="loginModel.Username" />
+                                        <ValidationMessage For="@(() => loginModel.Username)" />
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label for="password">Password</label>
+                                        <InputText Id="password" type="password" Class="form-control" @bind-Value="loginModel.Password" />
+                                        <ValidationMessage For="@(() => loginModel.Password)" />
+                                    </div>
+                                </div>
+                                <div class="col-lg-12">
+                                    <div class="form-group">
+                                        <div class="forgot-pass">
+                                            <a href="/change-password">Forgot Password?</a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-12">
+                                    <div class="text-center">
+                                        <button type="submit" class="btn signup-btn">Login</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </EditForm>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@code {
+
+    private LoginModel loginModel = new LoginModel();
+    private bool ShowErrors;
+    private string Error = "";
+
+    private async Task HandleLogin()
+    {
+        ShowErrors = false;
+
+        var result = await AuthService.Login(loginModel);
+
+        if (result.Successful)
+        {
+            NavigationManager.NavigateTo("/", true);
+        }
+        else
+        {
+            Error = result.Error!;
+            ShowErrors = true;
+        }
+    }
+
+}

@@ -1,0 +1,101 @@
+﻿@page "/company"
+@using HealthInsurance.Shared
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using Blazored.LocalStorage
+@using System.Net.Http.Headers
+@layout AdminLayout
+@attribute [Authorize(Roles = "Administrator")]
+@inject ILocalStorageService localStorage
+@inject HttpClient Http
+@inject NavigationManager navigationManager
+@rendermode @( new InteractiveWebAssemblyRenderMode(prerender: false))
+@using Helpers
+<h3>Managing insurance companies</h3>
+
+<button class="btn btn-success" @onclick="Add">Add new company</button>
+@if (Companies == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+
+    
+    @if (error)
+    {
+        <p class="text-bg-danger">Something wrong! @context</p>
+    }
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Address</th>
+                <th>URL</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var x in Companies)
+            {
+                <tr>
+                    <td>@x.Id</td>
+                    <td>@x.Name</td>
+                    <td>@x.Phone</td>
+                    <td>@x.Address</td>
+                    <td>@x.CompanyURL</td>
+                    <td><button class="btn btn-primary" @onclick="@(() => Edit(@x.Id))">Edit</button> | <button class="btn btn-danger" @onclick="@(() => Delete(@x.Id))">Delete</button></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<Company>? Companies;
+    bool error = false;
+    string context = "";
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+
+        // //Get an item named authToken which is the user's JWT token received after logged in stored in blazor local storage
+        // var token = await localStorage.GetItemAsync<string>("authToken");
+        // Employees = await Http.GetJsonAsync<List<EmployeeModel>>(
+        //     "api/employee",
+        //     //Pass token to the header before communicate to the API endpoints
+        //     new AuthenticationHeaderValue("Bearer", token),"get");
+    }
+
+    void Add()
+    {
+        navigationManager.NavigateTo("edit-company");
+    }
+
+    void Edit(int id)
+    {
+        navigationManager.NavigateTo($"edit-company/{id}");
+    }
+
+    async Task Delete(int id)
+    {
+        var result = await Http.DeleteAsync($"api/company/{id}");
+
+        //If not successed request
+        if (!result.IsSuccessStatusCode)
+        {
+            error = true;
+            context = result.StatusCode.ToString();
+        }
+        await LoadData();
+    }
+
+    async Task LoadData()
+    {
+        Companies = await Http.GetFromJsonAsync<List<Company>>("api/company");
+    }
+
+}
+

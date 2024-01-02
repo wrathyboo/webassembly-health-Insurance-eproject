@@ -1,0 +1,102 @@
+﻿@page "/edit-company"
+@page "/edit-company/{id:int}"
+@using HealthInsurance.Shared
+@using Blazored.LocalStorage
+@using System.Net.Http.Headers
+@using Helpers
+@layout AdminLayout
+@inject HttpClient Http
+@inject ILocalStorageService localStorage
+@inject NavigationManager navigationManager
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Administrator")]
+@if (Id == null)
+{
+    <h3>Create Company</h3>
+}
+else
+{
+    <h3>Edit Company @Company.Name</h3>
+}
+@if (error)
+{
+    <p class="text-bg-danger">Something wrong!</p>
+}
+<EditForm Model="Company" OnSubmit="HandleSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div>
+        <label for="name">Name</label>
+        <InputText id="name" @bind-Value="Company.Name" class="form-control"></InputText>
+        <ValidationMessage For="@(() => Company.Name)" />
+    </div>
+    <div>
+        <label for="address">Address</label>
+        <InputTextArea id="address" @bind-Value="Company.Address" class="form-control"></InputTextArea>
+        <ValidationMessage For="@(() => Company.Address)" />
+    </div>
+    <div>
+        <label for="phone">Phone number</label>
+        <InputText id="phone" @bind-Value="Company.Phone" class="form-control"></InputText>
+        <ValidationMessage For="@(() => Company.Phone)" />
+    </div>
+    <div>
+        <label for="url">URL</label>
+        <InputText id="url" @bind-Value="Company.CompanyURL" class="form-control"></InputText>
+        <ValidationMessage For="@(() => Company.CompanyURL)" />
+    </div>
+
+    <div class="text-center">
+        <button type="submit" class="btn btn-primary">Save</button>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+    bool error = false;
+    public Company Company { get; set; } = new Company();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id != null)
+        {
+            var result = await Http.GetFromJsonAsync<Company>($"api/company/{Id}");
+
+            Company.Name = result.Name;
+            Company.Address = result.Address;
+            Company.Phone = result.Phone;
+            Company.CompanyURL = result.CompanyURL;
+            Company.Id = result.Id;
+        }
+    }
+
+    async Task HandleSubmit()
+    {
+        if (Id != null)
+        {
+            var result = await Http.PutAsJsonAsync($"api/company/{Id}", Company);
+            if (result.IsSuccessStatusCode)
+            {
+                navigationManager.NavigateTo("/company");
+            }
+            else
+            {
+                error = true;
+            }
+            // User = await result.Content.ReadFromJsonAsync<EmployeeModel>();
+        }
+        else
+        {
+            var result = await Http.PostAsJsonAsync($"api/company", Company);
+            if (result.IsSuccessStatusCode)
+            {
+                navigationManager.NavigateTo("/company");
+            }
+            else
+            {
+                error = true;
+            }
+        }
+    }
+}

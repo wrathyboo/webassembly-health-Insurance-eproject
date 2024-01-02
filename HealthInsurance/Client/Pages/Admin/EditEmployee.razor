@@ -1,0 +1,152 @@
+﻿@page "/edit-employee"
+@page "/edit-employee/{id}"
+@using HealthInsurance.Shared
+@using Blazored.LocalStorage
+@using System.Net.Http.Headers
+@using Helpers
+@layout AdminLayout
+@inject HttpClient Http
+@inject ILocalStorageService localStorage
+@inject NavigationManager navigationManager
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Administrator")]
+@if (Id == null)
+{
+    <h3>Create Employee</h3>
+}
+else
+{
+    <h3>Edit Employee @User.UserName</h3>
+}
+@if (error)
+{
+    <p class="text-bg-danger">Something wrong!</p>
+}
+<EditForm Model="User" OnValidSubmit="HandleSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div>
+        <label for="firstName">First name</label>
+        <InputText id="firstName" @bind-Value="User.FirstName" class="form-control"></InputText>
+        <ValidationMessage For="@(() => User.FirstName)" />
+    </div>
+    <div>
+        <label for="lastName">Last name</label>
+        <InputText id="lastName" @bind-Value="User.LastName" class="form-control"></InputText>
+        <ValidationMessage For="@(() => User.LastName)" />
+    </div>
+    <div>
+        <label for="username">Username</label>
+        <InputText id="username" @bind-Value="User.UserName" class="form-control"></InputText>
+        <ValidationMessage For="@(() => User.UserName)" />
+    </div>
+    <div>
+        <label for="email">Email</label>
+        <InputText id="email" @bind-Value="User.Email" class="form-control"></InputText>
+        <ValidationMessage For="@(() => User.Email)" />
+    </div>
+    <div>
+        <label for="address">Address</label>
+        <InputTextArea id="address" @bind-Value="User.Address" class="form-control"></InputTextArea>
+        <ValidationMessage For="@(() => User.Address)" />
+    </div>
+    <div>
+        <label for="phone">Phone number</label>
+        <InputText id="phone" @bind-Value="User.PhoneNumber" class="form-control"></InputText>
+        <ValidationMessage For="@(() => User.PhoneNumber)" />
+    </div>
+    <div>
+        <label for="designation">Designation</label>
+        <InputText id="designation" @bind-Value="User.Designation" class="form-control"></InputText>
+        <ValidationMessage For="@(() => User.Designation)" />
+    </div>
+    <div>
+        <label for="country">Country</label>
+        <InputText id="country" @bind-Value="User.Country" class="form-control"></InputText>
+        <ValidationMessage For="@(() => User.Country)" />
+    </div>
+    <div>
+        <label for="city">City</label>
+        <InputText id="city" @bind-Value="User.City" class="form-control"></InputText>
+        <ValidationMessage For="@(() => User.City)" />
+    </div>
+    <div>
+        <label for="state">State</label>
+        <InputText id="state" @bind-Value="User.State" class="form-control"></InputText>
+        <ValidationMessage For="@(() => User.State)" />
+    </div>
+    <div>
+        <label for="salary">Salary</label>
+        <InputNumber id="salary" @bind-Value="User.Salary" class="form-control"></InputNumber>
+        <ValidationMessage For="@(() => User.Salary)" />
+    </div>
+    @if(Id == null)
+    {
+        <div>
+            <label for="password">Password</label>
+            <InputText id="password" @bind-Value="User.Password" type="password" class="form-control" required></InputText>
+            <ValidationMessage For="@(() => User.Password)" />
+        </div>
+    }
+    <div class="text-center">
+        <button type="submit" class="btn btn-primary">Save</button>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter]
+    public string? Id { get; set; }
+    bool error = false;
+    public EmployeeModel User { get; set; } = new EmployeeModel();
+    bool emptyPolicy = true;
+
+
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id != null){
+            var result = await Http.GetFromJsonAsync<ApplicationUser>($"api/employee/{Id}");
+
+            User.Email = result.Email;
+            User.FirstName = result.FirstName;
+            User.LastName = result.LastName;
+            User.PhoneNumber = result.PhoneNumber;
+            User.Address = result.Address;
+            User.Country = result.Country;
+            User.Designation = result.Designation;
+            User.City = result.City;
+            User.State = result.State;
+            User.UserName = result.UserName;
+            User.Salary = result.Salary;
+        }
+    }
+
+    async Task HandleSubmit()
+    {
+        if (Id != null)
+        {
+            var result = await Http.PutAsJsonAsync($"api/employee/{Id}", User);
+            if (result.IsSuccessStatusCode)
+            {
+                navigationManager.NavigateTo("/employees");
+            }
+            else
+            {
+                error = true;
+            }
+            // User = await result.Content.ReadFromJsonAsync<EmployeeModel>();
+        }
+        else
+        {
+            var result = await Http.PostAsJsonAsync($"api/employee", User);
+            if (result.IsSuccessStatusCode)
+            {
+                navigationManager.NavigateTo("employees");
+            }
+            else
+            {
+                error = true;
+            }
+        }
+    }
+}

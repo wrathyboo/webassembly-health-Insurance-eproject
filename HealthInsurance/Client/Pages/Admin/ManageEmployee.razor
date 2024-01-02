@@ -1,0 +1,112 @@
+﻿@page "/employees"
+@using HealthInsurance.Shared
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using Blazored.LocalStorage
+@using System.Net.Http.Headers
+@layout AdminLayout
+@attribute [Authorize(Roles = "Administrator")]
+@inject ILocalStorageService localStorage
+@inject HttpClient Http
+@inject NavigationManager navigationManager
+@using Helpers
+<h3>Managing Employees</h3>
+<button class="btn btn-success" @onclick="AddEmployee">Add new employee</button>
+@if (Employees == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Fullname</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Address</th>
+                <th>Join date</th>
+                <th>Designation</th>
+                <th>Salary</th>
+                <th>Policy</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var x in Employees)
+            {
+                <tr>
+                    <td>@x.Id</td>
+                    <td>@x.FirstName @x.LastName</td>
+                    <td>@x.Email</td>
+                    <td>@x.PhoneNumber</td>
+                    <td>@x.Address</td>
+                    <td>@x.CreatedAt</td>
+                    <td>@x.Designation</td>
+                    <td>@x.Salary</td>
+                    @if (x.PolicyId != null)
+                    {
+                        <td><a href="javascript: void(0)" @onclick="@(() => PolicyOnEmployee(@x.Id))">Policy Details</a></td>
+                    }
+                    else
+                    {
+                        <td><button class="btn btn-warning" @onclick="@(() => AddPolicy(@x.Id))">Add Policy</button></td>
+                    }
+                    <td><button class="btn btn-primary" @onclick="@(() => EditEmployee(@x.Id))">Edit</button> | <button class="btn btn-danger" @onclick="@(() => Delete(@x.Id))">Delete</button></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<EmployeeModel>? Employees;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+
+        // //Get an item named authToken which is the user's JWT token received after logged in stored in blazor local storage
+        // var token = await localStorage.GetItemAsync<string>("authToken");
+        // Employees = await Http.GetJsonAsync<List<EmployeeModel>>(
+        //     "api/employee",
+        //     //Pass token to the header before communicate to the API endpoints
+        //     new AuthenticationHeaderValue("Bearer", token),"get");
+    }
+
+    void PolicyOnEmployee(string id)
+    {
+        navigationManager.NavigateTo($"policy-employee-details/{id}");
+    }
+
+    void AddPolicy(string id)
+    {
+        navigationManager.NavigateTo($"add-policy-employee/{id}");
+    }
+
+    void AddEmployee()
+    {
+        navigationManager.NavigateTo("edit-employee");
+    }
+
+    void EditEmployee(string id)
+    {
+        navigationManager.NavigateTo($"edit-employee/{id}");
+    }
+
+    async Task Delete(string id)
+    {
+        var result = await Http.DeleteAsync($"api/employee/{id}");
+        await LoadData();
+    }
+
+    async Task LoadData()
+    {
+        Employees = await Http.GetFromJsonAsync<List<EmployeeModel>>("api/employee");
+    }
+
+}
+

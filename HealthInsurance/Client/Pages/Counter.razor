@@ -1,0 +1,31 @@
+﻿@page "/counter"
+@using Microsoft.AspNetCore.Components.Authorization
+@inherits LayoutComponentBase
+<PageTitle>Counter</PageTitle>
+
+<h1>Counter</h1>
+
+<p role="status">Current count: @currentCount</p>
+
+<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+<AuthorizeView>
+    <Authorized>
+        Welcome, @context.User.IsInRole("Administrator")
+       
+    </Authorized>
+    <NotAuthorized>
+       Not logged in
+    </NotAuthorized>
+</AuthorizeView>
+<AuthorizeView Roles="Administrator">
+    <p>You have an 'Admin' or 'Superuser' role claim.</p>
+</AuthorizeView>
+
+@code {
+    private int currentCount = 0;
+
+    private void IncrementCount()
+    {
+        currentCount++;
+    }
+}

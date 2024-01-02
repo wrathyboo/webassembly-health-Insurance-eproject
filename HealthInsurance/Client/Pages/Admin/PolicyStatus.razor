@@ -1,0 +1,77 @@
+﻿@page "/policy-status"
+@using HealthInsurance.Shared
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using Blazored.LocalStorage
+@using System.Net.Http.Headers
+@layout AdminLayout
+@attribute [Authorize(Roles = "Administrator")]
+@inject ILocalStorageService localStorage
+@inject HttpClient Http
+@inject NavigationManager navigationManager
+@using Helpers
+<h3>Policy approval details</h3>
+
+@if (policyApprovals == null)
+{
+    <p><em>Loading..</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Requested ID</th>
+                <th>Date approval</th>
+                <th>Status</th>
+                <th>Reason</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var x in policyApprovals)
+            {
+                <tr>
+                    <td>@x.Id</td>
+                    <td>@x.RequestId</td>
+                    <td>@x.DateApproved</td>
+                    @if (x.Status!.ToLower() == "approved")
+                    {
+                        <td class="bg-success">@x.Status</td>
+                    }
+                    else
+                    {
+                        <td class="bg-danger">@x.Status</td>
+                    }
+                    
+                    <td>@x.Reason</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<PolicyApprovalDetails>? policyApprovals;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+
+        // //Get an item named authToken which is the user's JWT token received after logged in stored in blazor local storage
+        // var token = await localStorage.GetItemAsync<string>("authToken");
+        // Employees = await Http.GetJsonAsync<List<EmployeeModel>>(
+        //     "api/employee",
+        //     //Pass token to the header before communicate to the API endpoints
+        //     new AuthenticationHeaderValue("Bearer", token),"get");
+    }
+
+
+
+    async Task LoadData()
+    {
+        policyApprovals = await Http.GetFromJsonAsync<List<PolicyApprovalDetails>>("api/policy/status");
+    }
+
+}
+

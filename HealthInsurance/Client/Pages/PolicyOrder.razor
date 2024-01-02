@@ -1,0 +1,73 @@
+﻿@page "/policy-order/{username}"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@inject HttpClient Http
+@inject NavigationManager navigationManager
+@using HealthInsurance.Shared
+@attribute [Authorize(Roles ="Member, Administrator")]
+
+        <h3>
+            Policy Order
+        </h3>
+@if(User!.PolicyOnEmployee == null)
+{
+    <p>Selected ID: @policyId</p>
+    <div>
+        <label for="policies">Available policies</label>
+        <select @bind="policyId" Id="policies" Class="form-control">
+
+            @if (policies != null)
+            {
+                @foreach (var x in policies)
+                {
+                    <option @key=x.Id value=@x.Id>@x.Name</option>
+                }
+            }
+        </select>
+    </div>
+    <div class="text-center">
+        <button type="submit" class="btn btn-primary" @onclick="HandleSubmit">Order</button>
+    </div>
+}
+else
+{
+    <p>You already have an existing policy!</p>
+}
+
+@code {
+    public List<Policy> policies { get; set; } = new List<Policy>();
+
+    int policyId;
+
+    public ApplicationUser User { get; set; } = new ApplicationUser();
+    [Parameter]
+    public string Username { get; set; }
+
+
+    protected override async Task OnParametersSetAsync()
+    {
+        User = await Http.GetFromJsonAsync<ApplicationUser>($"api/user/{Username}");
+        policies = await Http.GetFromJsonAsync<List<Policy>>("api/policy");
+
+    }
+
+    async Task HandleSubmit()
+    {
+        HealthInsurance.Shared.PolicyOrder order = new()
+            {
+                Id = policyId,
+                EmployeeId = User.Id,
+                EmployeeUsername = User.UserName
+            };
+        var result = await Http.PostAsJsonAsync("api/user/order",order);
+        if (result.IsSuccessStatusCode)
+        {
+            var assignPolicy = await Http.GetAsync($"api/policy-employee/{order.EmployeeId}/{order.Id}");
+            if (assignPolicy.IsSuccessStatusCode)
+            {
+                navigationManager.NavigateTo($"employee/{order.EmployeeUsername}");
+            }
+        }
+    }
+
+}
