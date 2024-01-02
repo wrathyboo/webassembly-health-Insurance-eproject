@@ -4,6 +4,7 @@
 @using Microsoft.AspNetCore.Components.WebAssembly.Authentication
 @using Blazored.LocalStorage
 @using System.Net.Http.Headers
+@using HealthInsurance.Client.Components
 @layout AdminLayout
 @attribute [Authorize(Roles = "Administrator")]
 @inject ILocalStorageService localStorage
@@ -12,13 +13,16 @@
 @using Helpers
 <h3>Managing Employees</h3>
 <button class="btn btn-success" @onclick="AddEmployee">Add new employee</button>
+<div class="col-md-10" style="margin-top:15px;margin-bottom:15px">
+        <Search OnSearchChanged="SearchChanged"/>
+    </div>
+<button class="btn btn-primary" @onclick="@(() => Reload())">Refresh</button>
 @if (Employees == null)
 {
     <p><em>Loading...</em></p>
 }
 else
 {
-    
 
     <table class="table">
         <thead>
@@ -64,6 +68,7 @@ else
 
 @code {
     private List<EmployeeModel>? Employees;
+    private List<EmployeeModel>? QueryUsers;
 
     protected override async Task OnInitializedAsync()
     {
@@ -103,9 +108,24 @@ else
         await LoadData();
     }
 
+    private async Task SearchChanged(string searchTerm)
+    {
+        Console.WriteLine(searchTerm);
+
+        Employees = await Http.GetFromJsonAsync<List<EmployeeModel>>($"api/employee/search?SearchTerm={searchTerm}");
+
+    }
+
+    void Reload()
+    {
+        navigationManager.Refresh();
+    }
+
     async Task LoadData()
     {
-        Employees = await Http.GetFromJsonAsync<List<EmployeeModel>>("api/employee");
+
+            Employees = await Http.GetFromJsonAsync<List<EmployeeModel>>("api/employee");
+        
     }
 
 }

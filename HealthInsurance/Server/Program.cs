@@ -1,4 +1,5 @@
 using HealthInsurance.Server.Data;
+using HealthInsurance.Server.Repository;
 using HealthInsurance.Shared;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -43,6 +44,9 @@ builder.Services.Configure<IdentityOptions>(options =>
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

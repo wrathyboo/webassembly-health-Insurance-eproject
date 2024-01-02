@@ -1,5 +1,6 @@
 ﻿using HealthInsurance.Server.Data;
 using HealthInsurance.Server.Helpers;
+using HealthInsurance.Server.Repository;
 using HealthInsurance.Shared;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -7,6 +8,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
 using System.Net;
 
 namespace HealthInsurance.Server.Controllers
@@ -19,12 +21,54 @@ namespace HealthInsurance.Server.Controllers
 		private readonly UserManager<ApplicationUser> _userManager;
 		private readonly RoleManager<IdentityRole> roleManager;
         private readonly ApplicationDbContext _context;
-        public EmployeeController(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, ApplicationDbContext context)
+        private readonly IEmployeeRepository _employeeRepository;
+        public EmployeeController(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, ApplicationDbContext context, IEmployeeRepository employeeRepository)
 		{
 			_userManager = userManager;
 			this.roleManager = roleManager;
 			_context = context;
+			_employeeRepository = employeeRepository;
 		}
+
+        [HttpGet("search")]
+        public async Task<IActionResult> GetSearch([FromQuery] SearchParameters searchParameters)
+        {
+            var result = await _employeeRepository.GetEmployees(searchParameters);
+            var employee = new List<EmployeeModel>();
+            Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(result.MetaData));
+
+            //First we get all the users then loop for each user
+            foreach (var user in result)
+            {
+                //Create new list which consist of users that are part of Member role
+                var e = new EmployeeModel();
+
+                //GetRolesAsync will return a list of role names assigned from that user
+                //If role contains Member, it will initiate a new employee with the given role then add to the list
+                var role = await _userManager.GetRolesAsync(user);
+                if (role.Contains("Member"))
+                {
+                    e.UserName = user.UserName;
+                    e.Email = user.Email;
+                    e.LastName = user.LastName;
+                    e.FirstName = user.FirstName;
+                    e.PhoneNumber = user.PhoneNumber;
+                    e.Address = user.Address;
+                    e.Id = user.Id;
+                    e.Country = user.Country;
+                    e.Role = role.FirstOrDefault();
+                    e.CreatedAt = user.CreatedAt;
+                    e.Designation = user.Designation;
+                    e.Salary = user.Salary;
+                    e.PolicyId = user.PolicyId;
+                    employee.Add(e);
+                }
+
+            }
+
+            return Ok(employee); //Return list of query users that have role "Member"
+
+        }
 
         // GET: api/Employee
         [HttpGet]
